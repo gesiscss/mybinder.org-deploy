@@ -1,0 +1,81 @@
+binderhub:
+  config:
+    BinderHub:
+      hub_url: http://jupyterhub.local.mybinder
+      template_path: /etc/binderhub/templates
+      use_registry: false
+
+  extraConfig:
+    # Disable send events to StackDriver on Google Cloud
+    01-eventlog:
+    02-badge-base-url: |
+      c.BinderHub.badge_base_url = "https://mybinder.org/"
+    01-template-variables: |
+      template_vars = {
+        "gesis_notebooks_https": 'https://notebooks-test.gesis.org/',
+        'production': False,
+      }
+      template_vars['gesis_notebooks_static'] = template_vars['gesis_notebooks_https'] + "static/"
+      # template_vars['gesis_web_frontend_framework'] = template_vars['gesis_notebooks_static'] + "gesis-web-frontend-framework/"
+      template_vars['gesis_web_frontend_framework'] = "https://www.gesis.org/typo3conf/ext/gesis_web_ext/Resources/Public/webpack/dist/"
+      # template_vars['binder_static'] = template_vars['gesis_notebooks_https'] + "binder/static/"
+      c.BinderHub.template_variables.update(template_vars)
+
+  extraEnv:
+    GOOGLE_APPLICATION_CREDENTIALS: /secrets/service-account.json
+  extraVolumeMounts:
+    - mountPath: /etc/binderhub/templates
+      name: binder-templates-gesis
+    - mountPath: /secrets
+      name: secrets
+      readOnly: true
+  extraVolumes:
+    - configMap:
+        name: binder-templates
+      name: binder-templates
+    - configMap:
+        name: binder-templates-gesis
+      name: binder-templates-gesis
+    - name: secrets
+      secret:
+        secretName: events-archiver-secrets
+
+  registry:
+    username: "your-username"
+    # This is unsafe! Only se for local development
+    password: "your-password"
+
+  ingress:
+    https:
+      # This is unsafe! Only se for local development
+      enabled: false
+    hosts:
+      - notebooks-test.gesis
+
+  jupyterhub:
+    ingress:
+      hosts:
+        - jupyterhub.notebooks-test.gesis
+
+static:
+  ingress:
+    tls:
+      # This is unsafe! Only se for local development
+      enabled: false
+    hosts:
+      - static.notebooks-test.gesis
+
+analyticsPublisher:
+  enabled: false
+
+prometheus:
+  enabled: false
+
+grafana:
+  enabled: false
+
+cryptnono:
+  enabled: false
+
+cluster-autoscaler:
+  enabled: false

@@ -33,6 +33,10 @@ GCP_ZONES = {
 # Mapping of config name to cluster name for AWS EKS deployments
 AWS_DEPLOYMENTS = {"curvenote": "binderhub"}
 
+GESIS_DEPLOYMENTS = [
+    "gesis-acceptance",
+]
+
 # Mapping of cluster names (keys) to resource group names (values) for Azure deployments
 AZURE_RGs = {}
 
@@ -190,6 +194,13 @@ def get_config_files(release, config_dir="config"):
     config_files.extend(
         sorted(glob.glob(os.path.join("secrets", config_dir, "common", "*.yaml")))
     )
+    if release.startswith("gesis"):
+        config_files.extend(
+            sorted(glob.glob(os.path.join(config_dir, "gesis", "*.yaml")))
+        )
+        config_files.extend(
+            sorted(glob.glob(os.path.join("secrets", config_dir, "gesis", "*.yaml")))
+        )
     # release-specific config files
     for config_dir in (config_dir, os.path.join("secrets", config_dir)):
         f = os.path.join(config_dir, release + ".yaml")
@@ -442,6 +453,7 @@ def main():
             "ovh",
             "ovh2",
             "curvenote",
+            "gesis-acceptance",
         ],
     )
     argparser.add_argument(
@@ -520,6 +532,10 @@ def main():
                 setup_auth_gcloud(args.release, cluster, args.dry_run)
             elif cluster in AWS_DEPLOYMENTS:
                 setup_auth_aws(cluster, args.dry_run)
+            elif cluster in GESIS_DEPLOYMENTS:
+                # GESIS uses a agent for Kubernetes
+                # https://docs.gitlab.com/ee/user/clusters/agent/install/
+                pass
             else:
                 raise Exception("Cloud cluster not recognised!")
 
